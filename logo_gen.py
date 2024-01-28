@@ -67,7 +67,7 @@ import struct
 import io
 from PIL import Image
 
-SUPPORT_RLE24_COMPRESSIONT = 1
+SUPPORT_RLE24_COMPRESSIONT = 0
 
 ## get header
 def GetImgHeader(size, compressed=0, real_bytes=0):
@@ -75,9 +75,7 @@ def GetImgHeader(size, compressed=0, real_bytes=0):
     header = [0 for i in list(range(SECTOR_SIZE_IN_BYTES))]
 
     width, height = size
-    print("width:",width,"height:",height,"size:",size)
     real_size = (real_bytes  + 511) // 512
-    print("real size:", real_size)
 
     # magic
     header[:8] = [ord('S'),ord('P'), ord('L'), ord('A'),
@@ -183,7 +181,6 @@ def encode(line):
 def encodeRLE24(img):
     print("using encodeRLE24")
     width, height = img.size
-    print("img.size:",img.size)
     output = io.BytesIO()
 
     for h in range(height):
@@ -213,17 +210,14 @@ def encodeRLE24(img):
 def GetImageBody(img, compressed=0):
     color = (0, 0, 0)
     if img.mode == "RGB":
-        print("RGB")
         background = img
         background.save("splash.png")
     elif img.mode == "RGBA":
-        print("RGBA")
         background = Image.new("RGB", img.size, color)
         img.load()
         background.paste(img, mask=img.split()[3]) # alpha channel
         background.save("splash.png")
     elif img.mode == "P" or img.mode == "L":
-        print("Image mode P or L")
         background = Image.new("RGB", img.size, color)
         img.load()
         background.paste(img)
@@ -231,9 +225,10 @@ def GetImageBody(img, compressed=0):
     else:
         print("sorry, can't support this format")
         sys.exit()
-
+    width, height = img.size
+    print("width:",width,"height:",height)
+    print("Image mode:",img.mode)
     if compressed == 1:
-        print("compressed image")
         return encodeRLE24(background)
     else:
         print("image merge")
@@ -245,6 +240,8 @@ def GetImageBody(img, compressed=0):
 def MakeLogoImage(logo, out):
     img = Image.open(logo)
     file = open(out, "wb")
+    imgsize = os.path.getsize(sys.argv[1]) // 1024 // 1024
+    print("size of the original splash.img:",imgsize,"MiB")
     body = GetImageBody(img, SUPPORT_RLE24_COMPRESSIONT)
     header = GetImgHeader(img.size, SUPPORT_RLE24_COMPRESSIONT, len(body))
 
@@ -253,7 +250,7 @@ def MakeLogoImage(logo, out):
     file.write(body)
 
     # Calculate the remaining size to fill with zeros
-    total_size = 10 * 1024 * 1024  # 10 MiB
+    total_size = os.path.getsize(sys.argv[1])
     written_size = len(header) + len(body)
     remaining_size = total_size - written_size
 
@@ -268,23 +265,29 @@ def MakeLogoImage(logo, out):
 ## mian
 
 def ShowUsage():
-    print(" usage: python logo_gen.py [logo.png]")
+    print(" you need to provide your device's original splash partition so the script can generate a new one with the same size")
+    print(" usage: python logo_gen.py [splash-orig.img] [image.png]")
 
 def GetPNGFile():
     infile = "logo.png" #default file name
     num = len(sys.argv)
     if num > 3:
         ShowUsage()
-        sys.exit(); # error arg
+        sys.exit(); # error file
 
-    if num == 2:
-        infile = sys.argv[1]
+    if num == 3:
+        infile = sys.argv[2]
 
-    if os.access(infile, os.R_OK) != True:
+    if num < 3:
         ShowUsage()
         sys.exit(); # error file
+
+    if os.access(infile, os.R_OK) != True:
+        print("cant read", infile)
+        ShowUsage()
+        sys.exit(); # error file
+
     return infile
 
 if __name__ == "__main__":
-    print("MakeLogoImage")
     MakeLogoImage(GetPNGFile(), "splash.img")
