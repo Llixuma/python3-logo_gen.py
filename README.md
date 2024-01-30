@@ -1,7 +1,7 @@
 # python3-logo_gen.py
 A port of the semi lost qcom logo_gen.py to python3
 
-## The script requires extraction of you devices original splash partition, to determine the size of the generated splash.img
+## The script requires extraction of your device's original splash partition to determine the size of the generated splash.img
 
   
 If you encounter any bugs or have suggestions on how to improve the script, please contribute by opening a merge request with the needed changes.  
