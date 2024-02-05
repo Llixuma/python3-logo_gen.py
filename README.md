@@ -1,5 +1,5 @@
 # python3-logo_gen.py
-A port of the semi lost qcom logo_gen.py to python3
+A port of the semi lost qcom logo_gen.py to python3  
 this is part of my Nokia 6300 4G AOSP conversion but i'll leave the semi working non sepecific version seperate for other devices, that also dont have an extractable splash partition.
 
 
